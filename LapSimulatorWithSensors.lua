@@ -1,12 +1,6 @@
 -- RPM Sweet Lap Simulator by P.Monaghan
 -- Based on Lap Siimulator by B.Picaso and RPM Demo by B.Picaso and F.Mirandola 
---Lap Simulator
---this script adequately simulates varying speeds and periodic pit stops
---Creates a static set of common sensors  oil temp, oil pressure, fuel level, and Engine temp
---Sweeps RPM values from x to Y, see below to adjust those values
---disable all GPS channels
---disable lap timing
-
+--Lap Simulator w/ times, sensors and rpm sweet
 dist = 0
 speed = 30
 speedDir = 0
@@ -24,20 +18,28 @@ pitStopStart = 0
 basePitStopTime = 20000
 rpm = 0
 coolantTemp = 50
+oilPressure = 100
 
- --Low RPM threshold for change direction edit this to set your low RPM Point
+ --Low RPM threshold 
 thrRpmLo = 1500
---Low RPM threshold for change direction edit this to set your shift or redline point
+--Hi RPM threshold 
 thrRpmHi = 6000
---Step between each RPM increment/decrement, will affect the speed, higher = faster - set this to set the speed of update
+--gauge speed
 incrementRpm = 200
 
---Low Engine temp threshold for change direction edit this to set your low engine temp Point
+--Low Engine temp 
 thrEngTmpLo = 70
---High enginer temp threshold for change direction edit this to set your high engine temp point
+--High enginer temp 
 thrEngTmpHi = 300
---Step between each engine temp increment/decrement, will affect the speed, higher = faster - set this to set the speed of update
+--gauge speed
 incrementTemp = 10
+
+-- Low oil pressure value
+thrOilPrLo = 70
+--High oil pressure value
+thrOilPrHi = 300
+--gauge speed
+incrementOilPr = 10
 
 maxDist = 3
 tickRate = 10
@@ -54,17 +56,14 @@ elapsedTimeId = addChannel("ElapsedTime", 10, 4)
 predTimeId = addChannel("PredTime", 10, 4)
 sessionTimeId = addChannel("SessionTime", 10, 4)
 
--- Simulated Sensors (these are static)
+-- Simulated Sensors
 rpmId = addChannel("RPMTmp", 10, 0, 0, 6000)
 tmpId = addChannel("EngineTmp", 10, 0, 0, 250)
 oilId = addChannel("OilTmp", 10, 0, 0, 220)
-pressId = addChannel("OilP", 10, 0, 0, 250)
+oilPressId = addChannel("OilP", 10, 0, 0, 250)
 fuelLvlID = addChannel("FuelLvl", 10, 0, 0, 80)
 
-
-
 setChannel(oilId, 210)
-setChannel(pressId, 250)
 setChannel(fuelLvlID,9)
 
 setChannel(lapCountId, lapCount)
@@ -72,6 +71,7 @@ setChannel(currentLapId, currentLap)
 
 direction = 0
 coolantDir = 0
+oilDir = 0
 
 function rpmSweep()
   setChannel(rpmId, rpm)
@@ -98,6 +98,19 @@ function sensorSweep()
     end
  
  end
+
+ function OilSensorSweep()
+  setChannel(oilPressId, oilPressure)
+
+   if (oilPressId<=thrOilPrHi and oilDir == 0 ) then oilPressure = oilPressure + incrementOilPr  
+         elseif (oilPressure>=thrOildPLo and oilDir == 1 ) then oilPressure = coolantTemp - incrementOilPr
+  end
+
+      if (oilPressure>thrOilPrHi) then oilDir = 1
+     elseif (oilPressure<thrOilPrLo) then oilDir = 0
+  end
+
+end
 
 
 function updateSpeed()
@@ -160,9 +173,11 @@ function checkPitStop()
 end
 
 function onTick()
+collectgarbage()
 checkNewLap()
 rpmSweep()
 sensorSweep()
+OilSensorSweep()
 updateSpeed()
 updateDistance()
 checkPitStop()
