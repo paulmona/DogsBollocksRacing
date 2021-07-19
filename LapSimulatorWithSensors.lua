@@ -23,6 +23,7 @@ pitStopTime = 0
 pitStopStart = 0
 basePitStopTime = 20000
 rpm = 0
+coolantTemp = 50
 
  --Low RPM threshold for change direction edit this to set your low RPM Point
 thrRpmLo = 1500
@@ -31,6 +32,12 @@ thrRpmHi = 6000
 --Step between each RPM increment/decrement, will affect the speed, higher = faster - set this to set the speed of update
 incrementRpm = 200
 
+--Low Engine temp threshold for change direction edit this to set your low engine temp Point
+thrEngTmpLo = 70
+--High enginer temp threshold for change direction edit this to set your high engine temp point
+thrEngTmpHi = 300
+--Step between each engine temp increment/decrement, will affect the speed, higher = faster - set this to set the speed of update
+incrementTemp = 10
 
 maxDist = 3
 tickRate = 10
@@ -49,27 +56,28 @@ sessionTimeId = addChannel("SessionTime", 10, 4)
 
 -- Simulated Sensors (these are static)
 rpmId = addChannel("RPMTmp", 10, 0, 0, 6000)
-tmpId = addChannel("EngineTmp", 10, 0, 0, 200)
+tmpId = addChannel("EngineTmp", 10, 0, 0, 250)
 oilId = addChannel("OilTmp", 10, 0, 0, 220)
 pressId = addChannel("OilP", 10, 0, 0, 250)
 fuelLvlID = addChannel("FuelLvl", 10, 0, 0, 80)
 
 
-setChannel(tmpId, 200)
+
 setChannel(oilId, 210)
 setChannel(pressId, 250)
 setChannel(fuelLvlID,9)
+
 setChannel(lapCountId, lapCount)
 setChannel(currentLapId, currentLap)
 
-
 direction = 0
+coolantDir = 0
 
 function rpmSweep()
   setChannel(rpmId, rpm)
- 
-  if (rpm<=thrRpmHi and direction == 0 ) then rpm = rpm + incrementRpm  
-   elseif (rpm>=thrRpmLo and direction == 1 ) then rpm = rpm - incrementRpm
+
+    if (rpm<=thrRpmHi and direction == 0 ) then rpm = rpm + incrementRpm  
+        elseif (rpm>=thrRpmLo and direction == 1 ) then rpm = rpm - incrementRpm
   end
 
   if (rpm>thrRpmHi) then direction = 1
@@ -77,6 +85,20 @@ function rpmSweep()
   end
 
 end
+
+function sensorSweep()
+    setChannel(tmpId, coolantTemp)
+
+     if (coolantTemp<=thrEngTmpHi and coolantDir == 0 ) then coolantTemp = coolantTemp + incrementTemp  
+           elseif (coolantTemp>=thrEngTmpLo and coolantDir == 1 ) then coolantTemp = coolantTemp - incrementTemp
+    end
+ 
+        if (coolantTemp>thrEngTmpHi) then coolantDir = 1
+       elseif (coolantTemp<thrEngTmpLo) then coolantDir = 0
+    end
+ 
+ end
+
 
 function updateSpeed()
 if speedDir > maxSpeedDir then speedDir = maxSpeedDir end
@@ -140,6 +162,7 @@ end
 function onTick()
 checkNewLap()
 rpmSweep()
+sensorSweep()
 updateSpeed()
 updateDistance()
 checkPitStop()
